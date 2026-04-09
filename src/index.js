@@ -1,23 +1,21 @@
 const express = require('express');
 
 const app = express();
+const quizRouter = require("./routes/quiz");
 const PORT = process.env.PORT || 3000;
 
-// Middleware to parse JSON bodies (will be useful in later steps)
+// Middleware to parse JSON bodies
 app.use(express.json());
 
-// Hello World route
-app.get('/', (req, res) => {
-  res.json({ message: 'Hello, World!' });
-});
+// Routes
+app.use("/api/quiz", quizRouter);
 
-// Health check route
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ msg: "Not found" });
 });
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
