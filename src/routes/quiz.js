@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
+const authenticate = require("../middleware/authenticate");
+const isOwner = require("../middleware/isOwner");
 
 /**
  * FORMAT RESPONSE
@@ -13,6 +15,7 @@ function formatQuiz(question) {
     options: question.options.map((o) => o.text),
   };
 }
+router.use(authenticate);  
 
 /**
  * GET ALL QUIZZES
@@ -113,7 +116,7 @@ router.put("/:quizId", async (req, res) => {
 /**
  * DELETE QUIZ
  */
-router.delete("/:quizId", async (req, res) => {
+router.delete("/:quizId", isOwner, async (req, res) => {
   const quizId = Number(req.params.quizId);
 
   const existing = await prisma.question.findUnique({
