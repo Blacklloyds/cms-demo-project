@@ -8,7 +8,7 @@
       "Hyper Transfer Text Process",
       "Home Tool Transfer Protocol"
     ],
-    answer: "HyperText Transfer Protocol"
+    answer:   "HyperText Transfer Protocol"
   },
   {
     id: 2,
