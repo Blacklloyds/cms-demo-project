@@ -1,5 +1,5 @@
 const CONFIG = {
-  API_URL: "http://localhost:3000", // adjust if your backend runs on another port
+  API_URL: "", // adjust if your backend runs on another port
 
   ROUTES: {
     LOGIN: "/api/auth/login",

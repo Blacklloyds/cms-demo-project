@@ -7,7 +7,7 @@ function getCurrentUserId() {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.userId;
+    return payload.id; // ✅ was payload.userId
   } catch {
     return null;
   }
@@ -231,7 +231,8 @@ async function loadQuestions(keyword = "", page = 1) {
       el.addEventListener("click", () => playQuestion(el.dataset.id));
     });
   } catch (err) {
-    if (err.message === "No token provided" || err.message === "Invalid or expired token") {
+    // ✅ matches the actual error messages from authenticate.js
+    if (err.message === "No token provided" || err.message === "Invalid token") {
       removeToken();
       showAuth();
       return;
