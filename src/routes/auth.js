@@ -1,86 +1,55 @@
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const {
+  ValidationError,
+  ConflictError,
+  UnauthorizedError,
+} = require("../lib/errors");
 
 const SECRET = process.env.JWT_SECRET;
 
-
 // REGISTER
-// =====================
 router.post("/register", async (req, res) => {
   const { email, password, name } = req.body;
 
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
+  if (!email || !password || !name)
+    throw new ValidationError("email, password and name are required");
 
-  // check if user exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email }
-  });
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) throw new ConflictError("Email already registered");
 
-  if (existingUser) {
-    return res.status(409).json({ error: "Email already exists" });
-  }
-
-  // hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
+  const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      name
-    }
+    data: { email, password: hashed, name },
   });
 
-  // generate token
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    SECRET,
-    { expiresIn: "1h" }
-  );
-
-  res.status(201).json({
-    message: "User registered successfully",
-    token
+  const token = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+    expiresIn: "1h",
   });
+
+  res.status(201).json({ message: "User registered successfully", token });
 });
 
-// =====================
 // LOGIN
-// =====================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Missing email or password" });
-  }
+  if (!email || !password)
+    throw new ValidationError("email and password are required");
 
-  // find user
-  const user = await prisma.user.findUnique({
-    where: { email }
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new UnauthorizedError("Invalid credentials");
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) throw new UnauthorizedError("Invalid credentials");
+
+  const token = jwt.sign({ id: user.id, email: user.email }, SECRET, {
+    expiresIn: "1h",
   });
-
-  if (!user) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-
-  // compare password
-  const isValid = await bcrypt.compare(password, user.password);
-
-  if (!isValid) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-
-  // generate token
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    SECRET,
-    { expiresIn: "1h" }
-  );
 
   res.json({ token });
 });
